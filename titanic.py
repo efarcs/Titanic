@@ -6,13 +6,13 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import seaborn as sns
-from titanic.src.titanic_utils import cabin_imputation
-from titanic.src.helpers import plot_grouped_overlay
+from src.titanic_utils import cabin_imputation
+from src.helpers import plot_grouped_overlay, plot_grouped_overlay_density
 
 np.random.seed(0)
 
 # %% Load and clean data
-df = pd.read_csv('C:\\Users\\alfie\\Documents\\VScode\\.kaggle\\titanic\\train.csv')
+df = pd.read_csv('C:\\Users\\alfie\\Documents\\VScode\\.kaggle\\titanic\\data\\train.csv')
 
 
 #Cleaning values names
@@ -48,8 +48,27 @@ ax.set_xlabel('Sex')
 ax.set_ylabel('Count')
 ax.set_title('Survivors vs Total, by Sex and Pclass')
 ax.legend(handles=[Patch(color='lightgray', label='Total'), Patch(color='green', label='Survived')])
-
 plt.show()
+
+# %% Plot: Survival by Age and Gender
+
+fig, ax = plt.subplots()
+
+#Creating total and survived by age
+
+total_mask = df['Age'].notna()
+male_mask = (df['Sex'] == 'male') & (df['Survived'] == True) & (df['Age'].notna())
+female_mask = (df['Sex'] == 'female') & (df['Survived'] == True) & (df['Age'].notna())
+
+total_series = df.loc[total_mask, 'Age']
+series_dict = {'male': df.loc[male_mask, 'Age'], 'female': df.loc[female_mask, 'Age']}
+
+plot_grouped_overlay_density(ax = ax, total_series= total_series, sub_series= series_dict)
+
+ax.legend()
+plt.show()
+
+#Density of 0-18, females and 0-15 males is higher than the density of those age groups in the total population.
 
 # %% Survivors by Gender
 print(df.groupby(['Sex','Survived']).size())
