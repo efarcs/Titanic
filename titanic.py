@@ -9,6 +9,7 @@ import seaborn as sns
 from src.titanic_utils import cabin_imputation
 from src.helpers import plot_grouped_overlay, plot_grouped_overlay_density
 
+
 np.random.seed(0)
 
 # %% Load and clean data
@@ -58,17 +59,51 @@ fig, ax = plt.subplots()
 
 total_mask = df['Age'].notna()
 male_mask = (df['Sex'] == 'male') & (df['Survived'] == True) & (df['Age'].notna())
+male_mask_inc_na = (df['Sex'] == 'male') & (df['Survived'] == True)
 female_mask = (df['Sex'] == 'female') & (df['Survived'] == True) & (df['Age'].notna())
+female_mask_inc_na = (df['Sex'] == 'female') & (df['Survived'] == True)
+total_survivors_mask_inc_na = df['Survived'] == True
 
-total_series = df.loc[total_mask, 'Age']
-series_dict = {'male': df.loc[male_mask, 'Age'], 'female': df.loc[female_mask, 'Age']}
+#Checking that dropped survivor is not dropping too many values
+assert (male_mask_inc_na.sum()) + (female_mask_inc_na.sum()) == (df['Survived'] == True).sum(), "Male and Female survivors, including those with null ages, do not sum to total survivors."
+assert (male_mask.sum()) + (female_mask.sum()) == ((total_survivors_mask_inc_na) & (df['Age'].notna())).sum(), "Non-null Male and Female survivors do not sum to non-null total survivors."
 
-plot_grouped_overlay_density(ax = ax, total_series= total_series, sub_series= series_dict)
 
+series_dict = {f'Total (includes both survived and died) n = {len(df.loc[total_mask, 'Age'])}':df.loc[total_mask, 'Age'], f'Male survivors n = {len(df.loc[male_mask, 'Age'])}': df.loc[male_mask, 'Age'], f'Female survivors n = {len(df.loc[female_mask, 'Age'])}': df.loc[female_mask, 'Age']}
+
+plot_grouped_overlay_density(ax = ax, sub_series= series_dict, boundary= 0, n_points= 300)
+
+ax.set_xlabel('Age')
+ax.set_ylabel('Probability Density')
+ax.set_title('Age distribution by Male and Female survivors, against total population')
 ax.legend()
+plt.figtext(0.25,0.01, "KDE estimated with boundary reflection at age 0.\nDensity of 0-18, females and 0-15 males is higher than the density of those age groups in the total population.")
+fig.subplots_adjust(bottom= 0.25)
 plt.show()
 
 #Density of 0-18, females and 0-15 males is higher than the density of those age groups in the total population.
+
+# %% Survival by Pclass and Sex heatmap version
+
+#Create a dataframe and then create a pivot table
+heatmap_df = df.loc[:, ['Pclass', 'Survived', 'Sex']]
+p_table = pd.pivot_table(data = heatmap_df, values = 'Survived', index = 'Pclass', aggfunc='mean', columns= 'Sex')
+p_table_count = pd.pivot_table(data = heatmap_df, values = 'Survived', index = 'Pclass', aggfunc='count', columns= 'Sex')
+p_table_final = p_table.round(2).astype(str) + "\n(n=" + p_table_count.astype(str) + ")"
+
+
+print(p_table_final)
+
+fig, ax = plt.subplots()
+
+sns.heatmap(data = p_table, ax=ax, annot = p_table_final , fmt='')
+
+ax.set_title("Survivability rate by Class and Sex")
+fig.subplots_adjust(bottom = 0.25)
+plt.ylabel('Class')
+plt.figtext(0.25, 0.01, "Women of all classes have a higher survivability rate than of any male irrespective of class.\nHowever, Upper class males have a much higher survivability rate than that of Middle and Lower class males.")
+plt.show()
+
 
 # %% Survivors by Gender
 print(df.groupby(['Sex','Survived']).size())
