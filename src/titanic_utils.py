@@ -20,4 +20,5 @@ def cabin_imputation(df, pclass: str):
     #Creating a mask for null cabins and then imputating 
     mask = df['Cabin'].isna() & (df['Pclass'] == pclass)
     n = mask.sum()
+    df.loc[mask, 'Cabin_Imputation_Flag'] = True
     df.loc[mask, 'Cabin_Notation'] = np.random.choice(freqs.index, size=n, p=freqs.values)

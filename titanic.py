@@ -51,7 +51,7 @@ ax.set_title('Survivors vs Total, by Sex and Pclass')
 ax.legend(handles=[Patch(color='lightgray', label='Total'), Patch(color='green', label='Survived')])
 plt.show()
 
-# %% Plot: Survival by Age and Gender
+# %% Plot:  KDE Survival by Age and Gender
 
 fig, ax = plt.subplots()
 
@@ -91,9 +91,6 @@ p_table = pd.pivot_table(data = heatmap_df, values = 'Survived', index = 'Pclass
 p_table_count = pd.pivot_table(data = heatmap_df, values = 'Survived', index = 'Pclass', aggfunc='count', columns= 'Sex')
 p_table_final = p_table.round(2).astype(str) + "\n(n=" + p_table_count.astype(str) + ")"
 
-
-print(p_table_final)
-
 fig, ax = plt.subplots()
 
 sns.heatmap(data = p_table, ax=ax, annot = p_table_final , fmt='')
@@ -128,22 +125,25 @@ print(df.groupby('Pclass')['Cabin'].apply(lambda x: x.str[0].value_counts()))
 print(df.groupby(df['Cabin'].isna())['Pclass'].value_counts(normalize=True))
 
 #Size of null Cabins in upper class
-print(df.loc[(df['Cabin'].isna()) & (df['Pclass'] == "Upper")].shape[0])
+print(f'Size of null Cabins in upper class: {df.loc[(df['Cabin'].isna()) & (df['Pclass'] == "Upper")].shape[0]}')
 #Size of non-null Cabins in upper class
-print(df.loc[(df['Cabin'].notna()) & (df['Pclass'] == "Upper")].shape[0])
+print(f'Size of non-null Cabins in upper class: {df.loc[(df['Cabin'].notna()) & (df['Pclass'] == "Upper")].shape[0]}')
 
 # %% Cabin imputation
 #Initialise Cabin Notation
 df['Cabin_Notation'] = df['Cabin']
+df['Cabin_Imputation_Flag'] = False
 
 #For non-null fields, take the cabin notation.
 mask = df['Cabin'].notna()
 df.loc[mask, 'Cabin_Notation'] = df.loc[mask, 'Cabin'].str[0]
 
-cabin_imputation(df=df, pclass='Upper')
-cabin_imputation(df=df, pclass='Middle')
-cabin_imputation(df=df, pclass='Lower')
+for pclass in df['Pclass'].unique():
+    cabin_imputation(df=df, pclass= pclass)
+
+
+assert df['Cabin_Notation'].isna().sum() == 0 , f'Cabin Imputation failed, there are {df['Cabin_Notation'].isna().sum()} values which have not been imputated'
 
 
 
-
+# %%
